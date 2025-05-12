@@ -1,12 +1,12 @@
 # Physics-Based Super-Resolved Simulation of 3d Elastic Wave Propagation Adopting Scalable Diffusion Transformer
 
-This repository contains an implementation of the paper : Physics-Based Super-Resolved Simulation of 3d Elastic Wave Propagation Adopting Scalable Diffusion Transformer. 
+This repository contains an implementation of the paper : Physics-Based Super-Resolved Simulation of 3d Elastic Wave Propagation Adopting Scalable Diffusion Transformer: https://arxiv.org/abs/2504.17308. 
 
 ## 🔍 Overview
 
 In this GitHub repository, we provide a checkpoint of the presentend model and an example model for inference in a notebooks.
 
-## 💻	 Setup
+## 💻 Setup
 
 ### Clone the repository
 
@@ -18,9 +18,10 @@ cd Seismic_DiT1D/
 Models weights checkpoints are available upon request on the following link : https://drive.google.com/drive/u/0/folders/16Cqdq72sto_WMix2K2tGRlc997N6nadA 
 
 ```
-model_checkpont/
+model_checkpoint/
 ├── diffusion_model.pt
 ├── xGBoost.model
+├──pga_model.pt
 ```
 
 
@@ -40,6 +41,11 @@ conda activate Seismic_DiT1D
 export PYTHONPATH="./"
 python3 generate.py --saving_path="generated_samples/"
 ```
+
+You can also launch "notebooks.ipynb" and execute it.
+
+## 🌟 Highlights
+- **`2025-04-28`** Our paper has been submitted to the COMPHY journal and is currently under review.
 
 ## 📝 Citation
 
