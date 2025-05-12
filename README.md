@@ -15,7 +15,14 @@ git clone https://github.com/HugoGabrielidis16/Seismic_DiT1D
 cd Seismic_DiT1D/
 ```
 
-Model weights checkpoint is available upon request on the following link : https://drive.google.com/drive/u/0/folders/16Cqdq72sto_WMix2K2tGRlc997N6nadA 
+Models weights checkpoints are available upon request on the following link : https://drive.google.com/drive/u/0/folders/16Cqdq72sto_WMix2K2tGRlc997N6nadA 
+
+```
+model_checkpont/
+├── diffusion_model.pt
+├── xGBoost.model
+```
+
 
 ### Install environnements
 
@@ -31,10 +38,20 @@ or run the following command.
 ```bash
 conda activate Seismic_DiT1D
 export PYTHONPATH="./"
-python3 generate_samples.py --saving_path="generated_samples/"
+python3 generate.py --saving_path="generated_samples/"
 ```
 
 ## 📝 Citation
+
+```bibtex
+@article{Hugo_2025,
+   title={Physics-Based Super-Resolved Simulation of 3d Elastic Wave Propagation Adopting Scalable Diffusion Transformer},
+   url={http://dx.doi.org/10.2139/ssrn.5228055},
+   DOI={10.2139/ssrn.5228055},
+   publisher={Elsevier BV},
+   author={Hugo, Gabrielidis and Gatti, Filippo and Stephane, Vialle},
+   year={2025} }
+```
 
 ## Acknowledgements
 
