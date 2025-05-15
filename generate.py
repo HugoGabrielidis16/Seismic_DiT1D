@@ -27,4 +27,3 @@ if __name__ == "__main__":
             frequencyloglog_graph(y, prediction, x, i, path = saving_path, show = True)
 
         
-
