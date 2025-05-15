@@ -127,5 +127,64 @@ def frequencyloglog_graph(y, generate,x, idx,path = "generated_samples/",show = 
 
 
 
-
-
+def visualize_samples(x,y):
+    x = np.array(x)
+    y = np.array(y)
+    print(f"MSE: {np.mean((x - y)**2)}")
+    components = ['E', 'N', 'Z']
+    colors = ['b', 'g', 'r']
+    fig, axs = plt.subplots(2, 3, figsize=(15, 10))
+    for i in range(3):
+        axs[0, i].plot(x[i], label='Input')
+        axs[1, i].plot(y[i], label='Output')
+        axs[0, i].set_title(f"Component X {components[i]} - Time Domain")
+        axs[0, i].legend()
+        axs[0, i].set_xlabel('Sample')
+        axs[0, i].set_ylabel('Amplitude')
+        axs[1, i].set_title(f"Component Y {components[i]} - Time Domain")
+        axs[1, i].set_xlabel('Sample')
+        axs[1, i].set_ylabel('Amplitude')
+    plt.tight_layout()
+    plt.show()
+    fig1, axs1 = plt.subplots(1, 3, figsize=(15, 5))
+    for i in range(3):
+        n_samples = len(x[i])
+        freq = np.fft.fftfreq(n_samples, d=1/100)  # 100Hz sampling
+        fft_x = np.abs(np.fft.fft(x[i]))
+        fft_y = np.abs(np.fft.fft(y[i]))
+        pos_freq_mask = freq > 0
+        axs1[i].loglog(freq[pos_freq_mask], fft_x[pos_freq_mask], 
+                      label='X', color='blue')
+        axs1[i].loglog(freq[pos_freq_mask], fft_y[pos_freq_mask], 
+                      label='Y', color='red')
+        axs1[i].axvline(x=30, color='k', linestyle=':', label='Cutoff (30 Hz)')
+        axs1[i].set_title(f"Component {components[i]} - Log Frequency Domain")
+        axs1[i].set_xlabel('Frequency (Hz)')
+        axs1[i].set_ylabel('Magnitude')
+        axs1[i].legend()
+        axs1[i].grid(True)
+        axs1[i].set_xlim(0, 30)  # Showing up to 30Hz to see cutoff effect
+    plt.tight_layout()
+    plt.show()
+    # Normal frequency domain plots
+    fig2, axs2 = plt.subplots(1, 3, figsize=(15, 5))
+    for i in range(3):
+        pos_freq_mask = freq > 0
+        pos_freq = freq[pos_freq_mask]
+        pos_fft_x = fft_x[pos_freq_mask]
+        pos_fft_y = fft_y[pos_freq_mask]
+        axs2[i].plot(pos_freq, pos_fft_x, 
+                    label='X', color='blue')
+        axs2[i].plot(pos_freq, pos_fft_y, 
+                    label='Y', color='red')
+        # Add vertical line at cutoff frequency
+        axs2[i].axvline(x=30, color='k', linestyle=':', label='Cutoff (30 Hz)')
+        axs2[i].set_title(f"Component {components[i]} - Linear Frequency Domain")
+        axs2[i].set_xlabel('Frequency (Hz)')
+        axs2[i].set_ylabel('Magnitude')
+        axs2[i].legend()
+        axs2[i].grid(True)
+        # Set x-axis limit to focus on relevant frequency range
+        axs2[i].set_xlim(0, 30)  # Showing up to 50 Hz to see cutoff effect
+    plt.tight_layout()
+    plt.show()
