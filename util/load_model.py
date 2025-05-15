@@ -1,8 +1,7 @@
 import torch
 import xgboost as xgb
-from PGA_predictor import CNNLSTM_PGA
 
-XGBBOOST_MODEL_PATH = "model_checkpoint/xgboost.model"
+XGBOOST_MODEL_PATH = "model_checkpoint/xgboost.model"
 CNNLSTM_PGA_PATH = "model_checkpoint/CNNLSTM_PGA.pth"
 DIFFUSION_MODEL_PATH = "model_checkpoint/diffusion_model.pth"
 
@@ -45,16 +44,9 @@ def load_pga_model(model_name = "XGBoost",
                    *args,**kwargs):
     if model_name == "XGBoost":
         model = xgb.Booster()
-        model.load_model(XGBBOOST_MODEL_PATH)
+        model.load_model(XGBOOST_MODEL_PATH)
     elif model_name== "CNNLSTM":
-        model = CNNLSTM_PGA(
-            in_channels=3,
-            out_channels=3,
-            num_layers=2,
-            hidden_size=64,
-            kernel_size=3,
-            dropout=0.1,
-            bidirectional=True)
+        """ We recommend using the XGBoost model as the performance are similar. """
         model = model.load_state_dict(CNNLSTM_PGA_PATH, strict=False)
         model.to(device)
         model.eval()
