@@ -1,7 +1,10 @@
 import torch
 
-def normalize(x,y, normalization = "min_max", eps = 0.0001,
-                  **kwargs):
+def normalize(x,y, normalization = "min_max", eps = 0.0001,**kwargs):
+    """
+    Normalize the input and output tensors based on the specified normalization method.
+    """
+
     if normalization == "max":
         x_magnitude = torch.max(torch.abs(x), dim=1).values
         y_magnitude = torch.max(torch.abs(y), dim=1).values
