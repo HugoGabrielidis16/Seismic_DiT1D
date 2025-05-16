@@ -22,6 +22,7 @@ if __name__ == "__main__":
     with torch.no_grad():
         for i, sample in dataset:
             x,y,y_magnitude = sample
+            x,y,y_magnitude = x.to(device),y.to(device),y_magnitude.to(device)
             prediction = diffusion_model(x, diffusion_steps=diffusion_steps)
             amplitude_graph(y, prediction, x, i, path = saving_path, show = True)
             frequencyloglog_graph(y, prediction, x, i, path = saving_path, show = True)
