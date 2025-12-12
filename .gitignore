@@ -175,3 +175,5 @@ cython_debug/
 
 # Personnal ignores
 model_checkpoint/*.pt
+*png
+generated_samples/
