@@ -40,12 +40,10 @@ def amplitude_graph(y,
     num_channels = y.shape[0]
     viridis = cm.get_cmap('viridis')
     #print(viridis(0))
-    try:
-        generate = generate.detach().cpu()
-        y = y.detach().cpu()
-        x = x.detach().cpu()
-    except:
-        pass
+    generate = generate.detach().cpu()
+    y = y.detach().cpu()
+    x = x.detach().cpu()
+    
     y_min = y.min()
     y_max = y.max()
     for i in range(num_channels):

@@ -1,10 +1,8 @@
 import numpy as np
 from tqdm import tqdm
-import math
 import torch
 import torch.nn as nn
-from obspy.signal.tf_misfit import eg, pg,plot_tf_gofs
-from numpy import linalg
+from obspy.signal.tf_misfit import eg, pg
 import torch.nn.functional as F
 
 
@@ -35,34 +33,15 @@ def compute_embeddings(autoencoder_model,dataloader, count):
 
     return np.array(image_embeddings)
 
-def calculate_fid(real_embeddings, generated_embeddings):
-    # calculate mean and covariance statistics
-    mu1, sigma1 = real_embeddings.mean(axis=0), np.cov(real_embeddings, rowvar=False)
-    mu2, sigma2 = generated_embeddings.mean(axis=0), np.cov(generated_embeddings,  rowvar=False)
-     # calculate sum squared difference between means
-    ssdiff = np.sum((mu1 - mu2)**2.0)
-    # calculate sqrt of product between cov
-    covmean = linalg.sqrtm(sigma1.dot(sigma2))
-    # check and correct imaginary numbers from sqrt
-    if np.iscomplexobj(covmean):
-       covmean = covmean.real
-     # calculate score
-    fid = ssdiff + np.trace(sigma1 + sigma2 - 2.0 * covmean)
-    return fid
-
 
 
 def log_spectral_distance(x1, x2):
-    # Compute the LSD
+
     difference = torch.log(x1) - torch.log(x2)
     lsd_value = torch.sqrt(torch.mean(difference ** 2, dim=1))
-    # Return the average LSD across the three rows (assuming they represent 3 different spectra)
+
     return lsd_value.mean()
 
-
-
-import torch
-import torch.nn.functional as F
 
 
 def calculate_seismic_ssim(target: torch.Tensor, 
@@ -161,83 +140,6 @@ def calculate_seismic_ssim(target: torch.Tensor,
     # Average over all dimensions
     return ssim_map.mean()
 
-
-# Alternative: Per-channel SSIM (returns SSIM for each seismic component)
-def calculate_seismic_ssim_per_channel(target: torch.Tensor, prediction: torch.Tensor,
-                                       window_size: int = 51, sigma: float = 1.5,
-                                       data_range: float = None) -> dict:
-    """
-    Calculate SSIM separately for each seismic channel (Z, N, E)
-    
-    Returns:
-        dict: {'mean': overall_ssim, 'channel_0': ssim_z, 'channel_1': ssim_n, 'channel_2': ssim_e}
-    """
-    
-    def _create_gaussian_window(window_size: int, sigma: float, device: torch.device) -> torch.Tensor:
-        gauss = torch.exp(
-            -torch.arange(-(window_size // 2), window_size // 2 + 1, device=device) ** 2 
-            / (2 * sigma ** 2)
-        )
-        return (gauss / gauss.sum()).view(1, 1, -1)
-    
-    if target.shape != prediction.shape:
-        raise ValueError(f"Shapes don't match: {target.shape} vs {prediction.shape}")
-    
-    if len(target.shape) == 2:
-        target = target.unsqueeze(0)
-        prediction = prediction.unsqueeze(0)
-    
-    batch_size, num_channels, _ = target.shape
-    window = _create_gaussian_window(window_size, sigma, target.device).to(target.dtype)
-    pad = window_size // 2
-    
-    ssim_channels = {}
-    
-    for ch in range(num_channels):
-        # Extract single channel
-        target_ch = target[:, ch:ch+1, :]
-        pred_ch = prediction[:, ch:ch+1, :]
-        
-        # Compute data range for this channel
-        if data_range is None:
-            ch_range = target_ch.max() - target_ch.min()
-            ch_range = torch.clamp(ch_range, min=1e-8)
-        else:
-            ch_range = data_range
-        
-        C1 = (0.01 * ch_range) ** 2
-        C2 = (0.03 * ch_range) ** 2
-        
-        # Padding and convolution
-        target_pad = F.pad(target_ch, (pad, pad), mode='reflect')
-        pred_pad = F.pad(pred_ch, (pad, pad), mode='reflect')
-        
-        mu_t = F.conv1d(target_pad, window)
-        mu_p = F.conv1d(pred_pad, window)
-        mu_t_sq = mu_t ** 2
-        mu_p_sq = mu_p ** 2
-        mu_tp = mu_t * mu_p
-        
-        sigma_t_sq = F.conv1d(target_pad ** 2, window) - mu_t_sq
-        sigma_p_sq = F.conv1d(pred_pad ** 2, window) - mu_p_sq
-        sigma_tp = F.conv1d(target_pad * pred_pad, window) - mu_tp
-        
-        sigma_t_sq = torch.clamp(sigma_t_sq, min=0)
-        sigma_p_sq = torch.clamp(sigma_p_sq, min=0)
-        
-        numerator = (2 * mu_tp + C1) * (2 * sigma_tp + C2)
-        denominator = (mu_t_sq + mu_p_sq + C1) * (sigma_t_sq + sigma_p_sq + C2)
-        ssim_ch = (numerator / denominator).mean()
-        
-        ssim_channels[f'channel_{ch}'] = ssim_ch.item()
-    
-    ssim_channels['mean'] = sum(ssim_channels.values()) / num_channels
-    
-    return ssim_channels
-
-
-
-
 def spectral_similarity(y_pred: torch.Tensor, y: torch.Tensor, eps: float = 1e-8) -> torch.Tensor:
     """
     Compute spectral similarity between predicted and target signals.
@@ -297,14 +199,6 @@ def spectral_similarity_with_freq(y_pred: torch.Tensor, y: torch.Tensor,
     # Normalize the spectra
     mag_pred_norm = mag_pred / (torch.sum(mag_pred, dim=-1, keepdim=True) + eps)
     mag_target_norm = mag_target / (torch.sum(mag_target, dim=-1, keepdim=True) + eps)
-    #mag_pred_norm = mag_pred / (torch.norm(mag_pred, p=2) + eps)
-    #mag_target_norm = mag_target / (torch.sum(mag_target,p=2) + eps)
-    
-    # Compute distance only for frequencies below 30Hz
-    #freq_mask_30hz = freqs[pos_freq_mask] <= 30
-    #spectral_distance = torch.mean(torch.abs(
-    #    mag_pred_norm[..., freq_mask_30hz] - mag_target_norm[..., freq_mask_30hz]
-    #))
     spectral_distance = torch.mean(torch.abs(
         mag_pred_norm- mag_target_norm
     ))
@@ -312,16 +206,3 @@ def spectral_similarity_with_freq(y_pred: torch.Tensor, y: torch.Tensor,
     return spectral_distance
 
 
-
-def highfrequency_metrics(y_pred,y,):
-    fft_ypred = torch.fft.rfft(y_pred)
-    fft_y = torch.fft.rfft(y)
-    fft_ypred = torch.abs(fft_ypred)
-    fft_y = torch.abs(fft_y)
-
-if __name__ == "__main__":
-    # Test highfrequency_metrics
-    y = torch.randn(8,3,6000)
-    y_pred = y + torch.randn_like(y) * 0.05
-    ssim = calculate_seismic_ssim(y_pred,y)
-    print(f"SSIM calculated successfully. : {ssim}")
