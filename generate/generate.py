@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 plt.rcParams['text.usetex'] = False
 
 # DEMO_STEPS = 100 Our model has been compile to use 100 steps on it's inference
-BATCH_SIZE = 15
+BATCH_SIZE = 10
 
 path_dict = {
     "DiT1D" : "model/models_checkpoints/DiT1D.pt"
@@ -28,10 +28,10 @@ def load_samples(samples_folder = "test_samples/"):
         - each batch contain x (1Hz normalized), y (30Hz normalized), x_magnitude (PGA of 1Hz), y_magnitude (PGA of 30Hz)
     """
     cached_data = torch.load(os.path.join(samples_folder, "batch_0.pt"))
-    x = cached_data['x']
-    y = cached_data['y']
-    x_magnitude = cached_data['x_magnitude']
-    y_magnitude = cached_data['y_magnitude']
+    x = cached_data['x'] # normalized 1Hz signal
+    y = cached_data['y'] # normalized 30Hz signal
+    x_magnitude = cached_data['x_magnitude'] # PGA of 1Hz
+    y_magnitude = cached_data['y_magnitude'] # PGA of 30Hz
     dataset = torch.utils.data.TensorDataset(x, y, x_magnitude, y_magnitude)
     return torch.utils.data.DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=False)
 
@@ -45,7 +45,7 @@ def generate_sample(device = "cpu"):
     diffusion_model = load_torchscript_model(path=path_dict[model_name], device=device)
 
     
-    path = f"generated_samples/{model_name}/"
+    path = f"generated_samples/{model_name}"
     os.makedirs(path, exist_ok=True)
 
     dataloader = load_samples()

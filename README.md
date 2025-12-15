@@ -42,6 +42,7 @@ Use the following folder structure
 ```
 model/models_checkpoints/
 ├── DiT1D.pt
+├── CNNLSTM.pt
 ```
 
 ### How to run 
@@ -93,7 +94,7 @@ This work was granted access to the HPC resources of IDRIS under the allocation 
 ## 📔 TODO
 
 - [x] Repository with model checkpoint for testing.    
-- [ ] Providing PGA model.
+- [x] Providing PGA model.
 - [x] Publish docker images for easier reproduction.
 - [ ] Clean and provide training scripts.
 - [ ] Publish complete Eida, STEAD and other datasets used to an AWS bucket.
