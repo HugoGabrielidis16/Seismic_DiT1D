@@ -45,7 +45,7 @@ def generate_sample(device = "cpu"):
     diffusion_model = load_torchscript_model(path=path_dict[model_name], device=device)
 
     
-    path = f"generated_samples/{model_name}/experiment/"
+    path = f"generated_samples/{model_name}/"
     os.makedirs(path, exist_ok=True)
 
     dataloader = load_samples()

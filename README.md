@@ -47,7 +47,7 @@ model/models_checkpoints/
 ### How to run 
 
 To run the model on the provided samples you can either follow the notebooks or run the following command.
-If install using pip, you are already inside your envirionment.
+If install using pip, you are already inside your envirionment. \
 If using conda:
 ```
 conda activate Seismic_DiT1D
@@ -64,9 +64,9 @@ cd workspace/
 To test on the set of samples provided in the repo use: 
 ```
 export PYTHONPATH="./"
-python3 generate/generate.py --saving_path="generated_samples/"
+python3 generate/generate.py "
 ```
-The results (either saved samples & comparison graph) are then saved in the "generated_samples" folder,
+The results (either saved samples & comparison graph) are then saved in the "generated_samples/DiT1D/" folder.
 
 
 ## 🌟 Highlights
