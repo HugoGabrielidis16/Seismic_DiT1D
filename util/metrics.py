@@ -36,7 +36,6 @@ def compute_embeddings(autoencoder_model,dataloader, count):
 
 
 def log_spectral_distance(x1, x2):
-
     difference = torch.log(x1) - torch.log(x2)
     lsd_value = torch.sqrt(torch.mean(difference ** 2, dim=1))
 
@@ -51,93 +50,63 @@ def calculate_seismic_ssim(target: torch.Tensor,
                            data_range: float = None,
                            per_sample_range: bool = True) -> torch.Tensor:
     """
-    Calculate SSIM for seismic signals of shape [batch_size, 3, 6000]
-    
-    Args:
-        target: Ground truth signal of shape [batch_size, 3, 6000]
-        prediction: Predicted signal of shape [batch_size, 3, 6000]
-        window_size: Size of the gaussian window (default: 51, larger for time series)
-        sigma: Standard deviation of gaussian window (default: 1.5)
-        data_range: Range of the data. If None, computed from target
-        per_sample_range: If True, compute data range per sample (recommended)
-    
-    Returns:
-        torch.Tensor: Single SSIM value averaged over batch and channels
+    Calculate the 1d SSIM  between target and prediction
     """
     
     def _create_gaussian_window(window_size: int, sigma: float, device: torch.device) -> torch.Tensor:
-        """
-        Create a gaussian window for SSIM calculation
-        """
         gauss = torch.exp(
             -torch.arange(-(window_size // 2), window_size // 2 + 1, device=device) ** 2 
             / (2 * sigma ** 2)
         )
         window = gauss / gauss.sum()
-        # Reshape for grouped conv1d [3, 1, window_size]
         return window.view(1, 1, -1).repeat(3, 1, 1)
     
     if target.shape != prediction.shape:
         raise ValueError(f"Shapes don't match: {target.shape} vs {prediction.shape}")
     
-    # Reshape signals to [batch_size, 3, 6000] if needed
     if len(target.shape) == 2:
         target = target.unsqueeze(0)
         prediction = prediction.unsqueeze(0)
     
     batch_size = target.shape[0]
     
-    # Compute data range
     if data_range is None:
         if per_sample_range:
-            # Compute per-sample range and average
             target_flat = target.reshape(batch_size, -1)
             data_range = (target_flat.max(dim=1)[0] - target_flat.min(dim=1)[0]).mean()
         else:
-            # Global range across all data
             data_range = target.max() - target.min()
         
-        # Ensure data_range is not too small
         data_range = torch.clamp(data_range, min=1e-8)
     
-    # Constants for stability
     C1 = (0.01 * data_range) ** 2
     C2 = (0.03 * data_range) ** 2
     
-    # Create gaussian window
     window = _create_gaussian_window(window_size, sigma, target.device)
     
-    # Use reflection padding (better for non-periodic signals)
     pad = window_size // 2
     target_pad = F.pad(target, (pad, pad), mode='reflect')
     prediction_pad = F.pad(prediction, (pad, pad), mode='reflect')
     
-    # Ensure same dtype
     if target_pad.dtype != window.dtype:
         window = window.to(target_pad.dtype)
     
-    # Calculate means using grouped convolution
     mu_t = F.conv1d(target_pad, window, groups=3)
     mu_p = F.conv1d(prediction_pad, window, groups=3)
     mu_t_sq = mu_t ** 2
     mu_p_sq = mu_p ** 2
     mu_tp = mu_t * mu_p
     
-    # Calculate variances and covariance
     sigma_t_sq = F.conv1d(target_pad ** 2, window, groups=3) - mu_t_sq
     sigma_p_sq = F.conv1d(prediction_pad ** 2, window, groups=3) - mu_p_sq
     sigma_tp = F.conv1d(target_pad * prediction_pad, window, groups=3) - mu_tp
     
-    # Ensure non-negative variances (numerical stability)
     sigma_t_sq = torch.clamp(sigma_t_sq, min=0)
     sigma_p_sq = torch.clamp(sigma_p_sq, min=0)
     
-    # Calculate SSIM
     numerator = (2 * mu_tp + C1) * (2 * sigma_tp + C2)
     denominator = (mu_t_sq + mu_p_sq + C1) * (sigma_t_sq + sigma_p_sq + C2)
     ssim_map = numerator / denominator
-    
-    # Average over all dimensions
     return ssim_map.mean()
 
 def spectral_similarity(y_pred: torch.Tensor, y: torch.Tensor, eps: float = 1e-8) -> torch.Tensor:
@@ -202,7 +171,6 @@ def spectral_similarity_with_freq(y_pred: torch.Tensor, y: torch.Tensor,
     spectral_distance = torch.mean(torch.abs(
         mag_pred_norm- mag_target_norm
     ))
-    
     return spectral_distance
 
 

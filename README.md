@@ -93,6 +93,7 @@ This work was granted access to the HPC resources of IDRIS under the allocation 
 ## 📔 TODO
 
 - [x] Repository with model checkpoint for testing.    
+- [ ] Providing PGA model.
 - [x] Publish docker images for easier reproduction.
 - [ ] Clean and provide training scripts.
 - [ ] Publish complete Eida, STEAD and other datasets used to an AWS bucket.

@@ -32,21 +32,30 @@ def amplitude_graph(y,
                     x,
                     path,
                     idx,
+                    x_magnitude = None,
+                    y_magnitude = None,
                     normalized = False,
                     format = "png",
                     show_x = False,
                     station_name = None):
     direction = ["E-W", "N-S", "U-D"]
     num_channels = y.shape[0]
-    viridis = cm.get_cmap('viridis')
     #print(viridis(0))
-    generate = generate.detach().cpu()
-    y = y.detach().cpu()
-    x = x.detach().cpu()
-    
-    y_min = y.min()
-    y_max = y.max()
+    if x_magnitude is not None and y_magnitude is not None:
+        y_magnitude = y_magnitude.view(3,1)
+        x_magnitude = x_magnitude.view(3,1)
+        y = (y*y_magnitude).detach().cpu() if y_magnitude is not None else y.detach().cpu()
+        generate = (generate*y_magnitude).detach().cpu() if y_magnitude is not None else generate.detach().cpu()
+        x = (x*x_magnitude).detach().cpu() if x_magnitude is not None else x.detach().cpu()
+    else:
+        y = y.detach().cpu()
+        generate = generate.detach().cpu()
+        x = x.detach().cpu()
+    y_min = min(y.min(), generate.min())
+    y_max = max(y.max(), generate.max())
     for i in range(num_channels):
+        #plt.figure(figsize=(25, 10))
+        #plt.figure(figsize=(15, 10))
         plt.figure(figsize=(8, 4))
         ax = plt.subplot(1,1, 1)
 
@@ -60,12 +69,12 @@ def amplitude_graph(y,
         ax.set_xlabel("t[s]", fontsize = 25)
         ax.set_ylabel(f"a(t)[m/s²]", fontsize = 25)
         ax.legend(fontsize = 10, loc='lower left')
-        ax.set_xticks(np.array([0,4,8,12,16,20,24,28,32,36,40,44,48,52,56,60])*100)
-        ax.set_xticklabels(np.array([0,4,8,12,16,20,24,28,32,36,40,44,48,52,56,60]), fontsize=15)
+        ax.set_xticks(np.array([0,12,24,36,48,60])*100)
+        ax.set_xticklabels(np.array([0,12,24,36,48,60]), fontsize=25)
 
         if normalized:
             ax.set_yticks(np.array([-1.0,-0.5,0.0,0.5,1.0]))
-            ax.set_yticklabels(np.array([-1.0,-0.5,0.0,0.5,1.0]), fontsize=15)
+            ax.set_yticklabels(np.array([-1.0,-0.5,0.0,0.5,1.0]), fontsize=25)
             ax.set_ylim(-1.1,1.1)
             ax.set_ylabel(f"a(t)[1]", fontsize = 25)
         else:
@@ -74,7 +83,7 @@ def amplitude_graph(y,
             ticks = np.stack((-ticks, ticks), axis=1).flatten()
             ticks = np.round(ticks, decimals=2)  # Adjust decimals as needed
             ax.set_yticks(ticks)
-            ax.set_yticklabels([f'{tick:.2f}' for tick in ticks], fontsize=15)
+            ax.set_yticklabels([f'{tick:.2f}' for tick in ticks], fontsize=25)
 
         plt.tight_layout()
         ax.legend(fontsize = 15, loc='lower right',frameon=False)
@@ -82,10 +91,12 @@ def amplitude_graph(y,
             title = f"{path}/{station_name}_Amplitude_graph_{idx}_{direction[i]}.{format}"
             title_png = f"{path}/{station_name}_Amplitude_graph_{idx}_{direction[i]}.png"
         else:
-            title = f"{path}/Amplitude_graph_{idx}_{direction[i]}.{format}"
-            title_png = f"{path}/Amplitude_graph_{idx}_{direction[i]}.png"
+            if normalized:
+                title = f"{path}/Normalized_Amplitude_graph_{idx}_{direction[i]}.{format}"
+            else:
+                title = f"{path}/Amplitude_graph_{idx}_{direction[i]}.{format}"
+        print(f"Amplitude graph saved to {title}")
         plt.savefig(title)
-        plt.savefig(title_png)
 
 
 def frequency_loglog(y, 
@@ -94,18 +105,24 @@ def frequency_loglog(y,
                        path, 
                        idx, 
                        format="png", 
+                       x_magnitude=None, 
+                       y_magnitude=None,
                        station_name=None, 
                        normalized=False,
                        xlim = 30):
-    try:
+    if x_magnitude is not None and y_magnitude is not None:
+        x_magnitude = x_magnitude.view(3,1)
+        y_magnitude = y_magnitude.view(3,1)
+        x = (x*x_magnitude).cpu().numpy()  if x_magnitude is not None else x.cpu().numpy()
+        y = (y*y_magnitude).cpu().numpy()  if y_magnitude is not None else y.cpu().numpy()
+        generate = (generate*y_magnitude).cpu().numpy() if y_magnitude is not None else generate.cpu().numpy()
+    else:
         x = x.cpu().numpy()
         y = y.cpu().numpy()
         generate = generate.cpu().numpy()
-    except:
-        pass
     
     viridis = cm.get_cmap('viridis')
-    fft_y_max = np.max(np.abs(np.fft.fft(y)))
+    fft_y_max = max(np.max(np.abs(np.fft.fft(y))), np.max(np.abs(np.fft.fft(generate))))
     components = ["E-W", "N-S", "U-D"]
     
     for i in range(3):
@@ -118,13 +135,13 @@ def frequency_loglog(y,
         
         # Only plot positive frequencies
         pos_freq_mask = freq > 0
-        axs1.loglog(freq[pos_freq_mask], fft_x[pos_freq_mask], label='$x$', color=x_rgb, linewidth=3, zorder=2)
         axs1.loglog(freq[pos_freq_mask], fft_y[pos_freq_mask], label='$y_{0}$', color=y_0_rgb, linewidth=3, zorder=1)
+        axs1.loglog(freq[pos_freq_mask], fft_x[pos_freq_mask], label='$x$', color=x_rgb, linewidth=3, zorder=2)
         axs1.loglog(freq[pos_freq_mask], fft_generate[pos_freq_mask], label='$y$', color=y_rgb, linewidth=2, zorder=2)
         
         axs1.set_title(f"{components[i]}", fontsize=25)
         axs1.set_xlabel('Frequency (Hz)')
-        axs1.set_xticks([0.01, 0.1, 1, 10, 30])
+        axs1.set_xticks([0.01, 0.1, 1, 10, 100])
         axs1.set_xticklabels(axs1.get_xticks(), fontsize=15)
         
         if fft_y_max > 100:
@@ -146,8 +163,10 @@ def frequency_loglog(y,
         #axs1.yaxis.set_major_locator(ScalarFormatter())
         #axs1.yaxis.set_major_formatter(ScalarFormatter())
         
-        
-        axs1.tick_params(axis='y', labelsize=15)
+        if normalized:
+            axs1.set_ylabel(f"a(f)[1]", fontsize=25)
+        else:
+            axs1.set_ylabel(f"a(f)[m/s²]", fontsize=25)
         axs1.set_ylabel(f"a(f)[m/s²]", fontsize=25)
         axs1.set_xlabel("f[Hz]", fontsize=25)
         
@@ -161,12 +180,12 @@ def frequency_loglog(y,
         
         if station_name is not None:
             title = f'{path}/{station_name}_Frequency_{idx}_Spectrumloglog{components[i]}.{format}'
-            title_png = f'{path}/{station_name}_Frequency_{idx}_Spectrumloglog{components[i]}.png'
         else:
-            title = f'{path}/Frequency_{idx}_Spectrumloglog{components[i]}.{format}'
-            title_png = f'{path}/Frequency_{idx}_Spectrumloglog{components[i]}.png'
-        
+            if normalized:
+                title = f'{path}/Normalized_Frequency_{idx}_Spectrumloglog{components[i]}.{format}'
+            else:
+                title = f'{path}/Frequency_{idx}_Spectrumloglog{components[i]}.{format}'
+        print(f"Frequency graph saved to {title}")
         plt.savefig(title)
-        plt.savefig(title_png)
         plt.close(fig1)
         
