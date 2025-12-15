@@ -23,14 +23,12 @@ def gof(pred,target):
     return eg_value, pg_value
 
 def compute_embeddings(autoencoder_model,dataloader, count):
+    # Thought of using FID metrics at first
     image_embeddings = []
-
-
     for _ in tqdm(range(count)):
         images = next(iter(dataloader))
         embeddings = autoencoder_model.predict(images)
         image_embeddings.extend(embeddings)
-
     return np.array(image_embeddings)
 
 
@@ -38,7 +36,6 @@ def compute_embeddings(autoencoder_model,dataloader, count):
 def log_spectral_distance(x1, x2):
     difference = torch.log(x1) - torch.log(x2)
     lsd_value = torch.sqrt(torch.mean(difference ** 2, dim=1))
-
     return lsd_value.mean()
 
 
@@ -48,9 +45,9 @@ def calculate_seismic_ssim(target: torch.Tensor,
                            window_size: int = 51, 
                            sigma: float = 1.5,
                            data_range: float = None,
-                           per_sample_range: bool = True) -> torch.Tensor:
+                           per_sample_range: bool = True):
     """
-    Calculate the 1d SSIM  between target and prediction
+    Calculate the 1d SSIM between target and prediction
     """
     
     def _create_gaussian_window(window_size: int, sigma: float, device: torch.device) -> torch.Tensor:
@@ -108,69 +105,3 @@ def calculate_seismic_ssim(target: torch.Tensor,
     denominator = (mu_t_sq + mu_p_sq + C1) * (sigma_t_sq + sigma_p_sq + C2)
     ssim_map = numerator / denominator
     return ssim_map.mean()
-
-def spectral_similarity(y_pred: torch.Tensor, y: torch.Tensor, eps: float = 1e-8) -> torch.Tensor:
-    """
-    Compute spectral similarity between predicted and target signals.
-    
-    Args:
-        y_pred: Predicted signal tensor of shape [Bs, 3, 6000]
-        y: Target signal tensor of shape [Bs, 3, 6000]
-        eps: Small value to avoid division by zero
-        
-    Returns:
-        torch.Tensor: Spectral similarity score (lower is better)
-    """
-    # Compute FFT for both signals
-    fft_pred = torch.fft.fft(y_pred, dim=-1)
-    fft_target = torch.fft.fft(y, dim=-1)
-    
-    # Compute magnitude spectra (absolute values)
-    mag_pred = torch.abs(fft_pred)
-    mag_target = torch.abs(fft_target)
-    
-    # Normalize the spectra
-    mag_pred_norm = mag_pred / (torch.sum(mag_pred, dim=-1, keepdim=True) + eps)
-    mag_target_norm = mag_target / (torch.sum(mag_target, dim=-1, keepdim=True) + eps)
-    
-    # Compute L1 distance between normalized spectra
-    spectral_distance = torch.mean(torch.abs(mag_pred_norm - mag_target_norm))
-    
-    return spectral_distance
-
-
-def spectral_similarity_with_freq(y_pred: torch.Tensor, y: torch.Tensor, 
-                                sampling_rate: float = 100.0, eps: float = 1e-8) -> torch.Tensor:
-    """
-    Compute spectral similarity with explicit frequency calculation.
-    
-    Args:
-        y_pred: Predicted signal tensor of shape [Bs, 3, 6000]
-        y: Target signal tensor of shape [Bs, 3, 6000]
-        sampling_rate: Sampling rate in Hz
-        eps: Small value to avoid division by zero
-    """
-    # Compute FFT
-    fft_pred = torch.fft.fft(y_pred, dim=-1)
-    fft_target = torch.fft.fft(y, dim=-1)
-    
-    # Calculate frequency axis (similar to np.fft.fftfreq)
-    n_samples = y_pred.shape[-1]
-    freqs = torch.fft.fftfreq(n_samples, d=1/sampling_rate)
-    
-    # Get positive frequencies mask
-    pos_freq_mask = freqs > 0
-    
-    # Compute magnitude spectra for positive frequencies
-    mag_pred = torch.abs(fft_pred[..., pos_freq_mask])
-    mag_target = torch.abs(fft_target[..., pos_freq_mask])
-    
-    # Normalize the spectra
-    mag_pred_norm = mag_pred / (torch.sum(mag_pred, dim=-1, keepdim=True) + eps)
-    mag_target_norm = mag_target / (torch.sum(mag_target, dim=-1, keepdim=True) + eps)
-    spectral_distance = torch.mean(torch.abs(
-        mag_pred_norm- mag_target_norm
-    ))
-    return spectral_distance
-
-
