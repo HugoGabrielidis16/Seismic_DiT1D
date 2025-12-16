@@ -35,7 +35,7 @@ docker pull yuuuugo/seismic
 ### Download model weight
 
 Models weights checkpoints are available upon request on the following link : 
-https://drive.google.com/drive/u/0/folders/16Cqdq72sto_WMix2K2tGRlc997N6nadA.
+https://drive.google.com/drive/folders/1Bc6fqy90C32y-OmGg2syUUYaJL0rusXd.
 
 Use the following folder structure
 
@@ -65,7 +65,7 @@ cd workspace/
 To test on the set of samples provided in the repo use: 
 ```
 export PYTHONPATH="./"
-python3 generate/generate.py "
+python3 generate/generate.py 
 ```
 The results (either saved samples & comparison graph) are then saved in the "generated_samples/DiT1D/" folder.
 
